@@ -1,11 +1,8 @@
 const mongoose = require("mongoose");
 
 const customerSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-
-  walletBalance: { type: Number, default: 0 },
+  email: { type: String, unique: true, sparse: true }, // Optional, but unique
+  phone: { type: String, unique: true, sparse: true }, // Optional, but unique
   createdAt: { type: Date, default: Date.now }
 });
 
