@@ -1,7 +1,7 @@
 const express = require("express");
 const { addUser, getAllUsers } = require("../controller/userController");
 const {registerCustomer,getAllCustomers,getCustomerProfile}=require("../controller/CustomerController");
-const { registerPartner, getAllPartners, updatePartnerStatus } = require("../controller/PartnerController");
+const { registerPartner, getAllPartners, updatePartnerStatus ,loginPartner} = require("../controller/PartnerController");
 const { createBooking, getCustomerBookings, cancelBooking ,updateChargingStatusByPartner,stopChargingByPartner,startChargingByPartner,getAllCompletedBookingsForPartner,getServiceListForPartner,stopCharging,getInProgressBookings,getCompletedBookings} = require("../controller/BookingController");
 const router = express.Router();
 
@@ -29,6 +29,7 @@ router.post("/register-partner", upload.fields([
   { name: "adhar_pic_front", maxCount: 1 },
   { name: "adhar_pic_back", maxCount: 1 }
 ]), registerPartner);
+router.post("/login-partner", loginPartner);
 
 router.get("/all", getAllPartners);
 router.patch("/status/:id", updatePartnerStatus);
