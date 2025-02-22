@@ -6,15 +6,15 @@ const bookingSchema = new mongoose.Schema({
 
   customer: {
     _id: { type: mongoose.Schema.Types.ObjectId, required: true },
-    name: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String, required: true }
+ 
+    email: { type: String,  },
+    phone: { type: String, }
   },
 
   station: {
-    name: { type: String, required: true },
-    address: { type: String, required: true },
-    url: { type: String, required: true }
+    name: { type: String, },
+    address: { type: String,  },
+    url: { type: String,  }
   },
 
   connectorType: { type: String, enum: ["Type1", "Type2", "CCS", "CHAdeMO"], required: true },

@@ -22,7 +22,7 @@ exports.createBooking = async (req, res) => {
       customerId,
       customer: {
         _id: customer._id,
-        name: customer.name,
+   
         email: customer.email,
         phone: customer.phone
       },
