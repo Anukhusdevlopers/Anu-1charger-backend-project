@@ -100,14 +100,16 @@ exports.stopCharging = async (req, res) => {
 
 exports.getInProgressBookings = async (req, res) => {
   try {
-    // Find all bookings where status is "Pending" (charging in progress)
-    const bookings = await Booking.find({ status: "Pending" });
+    const { customerId } = req.params;
+
+    // Find all bookings for the specific customer where status is "Pending"
+    const bookings = await Booking.find({ "customer._id": customerId , status: "Pending" });
 
     if (bookings.length === 0) {
-      return res.status(404).json({ message: "No active charging sessions found" });
+      return res.status(404).json({ message: "No active charging sessions found for this customer" });
     }
 
-    // Format the response correctly
+    // Format the response
     const response = bookings.map((booking) => ({
       customer: {
         _id: booking.customer._id,
@@ -139,11 +141,13 @@ exports.getInProgressBookings = async (req, res) => {
 
 exports.getCompletedBookings = async (req, res) => {
   try {
-    // Find all bookings where status is "Completed"
-    const bookings = await Booking.find({ status: "Completed" });
+    const { customerId } = req.params; // Extract customerId from URL
+
+    // Find completed bookings for the specific customer
+    const bookings = await Booking.find({ status: "Completed", "customer._id": customerId });
 
     if (bookings.length === 0) {
-      return res.status(404).json({ message: "No completed charging sessions found" });
+      return res.status(404).json({ message: "No completed charging sessions found for this customer" });
     }
 
     // Format the response correctly
@@ -168,7 +172,7 @@ exports.getCompletedBookings = async (req, res) => {
     }));
 
     res.status(200).json({
-      message: "Completed charging sessions found",
+      message: "Completed charging sessions found for the customer",
       bookings: response
     });
 

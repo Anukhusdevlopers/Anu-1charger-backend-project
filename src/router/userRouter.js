@@ -41,8 +41,9 @@ router.patch("/status/:id", updatePartnerStatus);
 
 router.post("/start-charging", createBooking);
 router.post("/stop-charging/:customerId", stopCharging);
-router.get("/running-charging-list", getInProgressBookings);
-router.get("/completed-charging-list", getCompletedBookings);
+router.get("/running-charging-list/:customerId", getInProgressBookings);
+router.get("/completed-charging-list/:customerId", getCompletedBookings);
+
 router.get("/service-list-for-partner", getServiceListForPartner);
 router.get("/completed-service-list-for-partner", getAllCompletedBookingsForPartner);
 router.post("/start-charging-by-partner", startChargingByPartner);

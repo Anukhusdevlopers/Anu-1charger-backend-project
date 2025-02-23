@@ -17,7 +17,10 @@ const bookingSchema = new mongoose.Schema({
     url: { type: String,  }
   },
 
-  connectorType: { type: String, enum: ["Type1", "Type2", "CCS", "CHAdeMO"], required: true },
+  connectorType: { type: String, enum: ["Connector 1", "Connector 2", "CCS"], required: true },
+
+
+  
 
   startTime: { type: Date, required: true },
   duration: { type: Number, required: true }, // Charging duration in hours
