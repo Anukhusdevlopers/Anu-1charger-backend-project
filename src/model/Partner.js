@@ -7,18 +7,23 @@ const partnerSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // Hashed password
 
-  // Current location (optional)
-  current_location: {
-    lat: { type: Number, default: null },
-    lng: { type: Number, default: null }
+  // Geospatial location
+  location: {
+    type: { type: String, enum: ["Point"], default: "Point" },
+    coordinates: { type: [Number], required: true } // [longitude, latitude]
   },
 
+  status: { type: String, enum: ["Available", "Busy"], default: "Available" },
+
   // Aadhaar Images (Front & Back)
-  adhar_pic_front: { type: String, },
-  adhar_pic_back: { type: String, },
+  adhar_pic_front: { type: String },
+  adhar_pic_back: { type: String },
 
   createdAt: { type: Date, default: Date.now }
 });
+
+// Create 2dsphere index for geospatial queries
+partnerSchema.index({ location: "2dsphere" });
 
 // Hash password before saving
 partnerSchema.pre("save", async function (next) {

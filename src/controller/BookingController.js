@@ -1,57 +1,87 @@
 const Booking = require("../model/Booking");
 const Customer = require("../model/Customer");
-
+const Partner=require('../model/Partner')
 exports.createBooking = async (req, res) => {
   try {
     console.log("Incoming request body:", req.body); // ✅ Debugging log
 
-    const { customerId, charging_hour, amount, connectorType, ev_station_name, ev_address, ev_station_url } = req.body;
+    const { customerId, charging_hour, amount, connectorType, ev_station_name, ev_address, ev_station_url, latitude, longitude } = req.body;
 
-    if (!customerId) {
-      return res.status(400).json({ message: "customerId is required" });
+    if (!customerId || !latitude || !longitude) {
+      return res.status(400).json({ message: "customerId, latitude, and longitude are required" });
     }
 
-    // Fetch full customer details
-    const customer = await Customer.findById(customerId);
+    // ✅ Step 1: Customer ka location update karo
+    const customer = await Customer.findByIdAndUpdate(
+      customerId,
+      { location: { type: "Point", coordinates: [longitude, latitude] } }, // [longitude, latitude]
+      { new: true }
+    );
+
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Create booking data (Now storing full customer & station details)
+    // ✅ Step 2: Nearest available partner find karo (5km ke andar)
+    const nearestPartner = await Partner.findOne({
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [longitude, latitude] },
+          $maxDistance: 5000, // 5 km in meters
+        },
+      },
+      status: "Available", // ✅ Fix: Capitalized "Available" to match schema
+    });
+
+    if (!nearestPartner) {
+      return res.status(404).json({ message: "No available partner within 5 km" });
+    }
+
+    // ✅ Step 3: Booking create karo
     const bookingData = {
       customerId,
       customer: {
         _id: customer._id,
-   
         email: customer.email,
-        phone: customer.phone
+        phone: customer.phone,
+        location: customer.location, // ✅ Add customer location in booking
       },
       station: {
         name: ev_station_name,
         address: ev_address,
-        url: ev_station_url
+        url: ev_station_url,
       },
       connectorType,
       startTime: new Date(),
       duration: charging_hour,
       amount,
-      status: "Pending"
+      status: "Pending",
+      partner: {
+        _id: nearestPartner._id,
+        name: nearestPartner.name,
+        mobile: nearestPartner.mobile, // ✅ Added mobile for reference
+        email: nearestPartner.email, // ✅ Added email for reference
+        location: nearestPartner.location,
+      },
     };
 
-    // Save to database
     const newBooking = new Booking(bookingData);
     await newBooking.save();
 
+    // ✅ Step 4: Partner ko "Busy" mark karo
+    await Partner.findByIdAndUpdate(nearestPartner._id, { status: "Busy" });
+
     res.status(201).json({
       message: "Booking created successfully",
-      booking: newBooking
+      booking: newBooking,
+      assignedPartner: nearestPartner,
     });
 
   } catch (error) {
+    console.error("Error in createBooking:", error); // ✅ Debugging error
     res.status(500).json({ error: error.message });
   }
 };
-
 
 exports.stopCharging = async (req, res) => {
   try {
