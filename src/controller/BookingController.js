@@ -27,7 +27,7 @@ exports.createBooking = async (req, res) => {
       location: {
         $near: {
           $geometry: { type: "Point", coordinates: [longitude, latitude] },
-          $maxDistance: 5000, // 5 km in meters
+          $maxDistance: 1000000, // 1000 km in meters
         },
       },
       status: "Available", // ✅ Fix: Capitalized "Available" to match schema
