@@ -3,7 +3,7 @@ const Customer = require("../model/Customer");
 const Partner=require('../model/Partner')
 exports.createBooking = async (req, res) => {
   try {
-    console.log("Incoming request body:", req.body); // ✅ Debugging log
+    console.log("Incoming request body:", req.body);
 
     const { customerId, charging_hour, amount, connectorType, ev_station_name, ev_address, ev_station_url, latitude, longitude } = req.body;
 
@@ -11,10 +11,10 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ message: "customerId, latitude, and longitude are required" });
     }
 
-    // ✅ Step 1: Customer ka location update karo
+    // ✅ Step 1: Customer location update
     const customer = await Customer.findByIdAndUpdate(
       customerId,
-      { location: { type: "Point", coordinates: [longitude, latitude] } }, // [longitude, latitude]
+      { location: { type: "Point", coordinates: [longitude, latitude] } },
       { new: true }
     );
 
@@ -22,29 +22,42 @@ exports.createBooking = async (req, res) => {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // ✅ Step 2: Nearest available partner find karo (5km ke andar)
-    const nearestPartner = await Partner.findOne({
+    let assignedPartner = null;
+
+    // ✅ Step 2: Pehle 5km ke andar partner dhoondo
+    let nearestPartner = await Partner.findOne({
       location: {
         $near: {
           $geometry: { type: "Point", coordinates: [longitude, latitude] },
-          $maxDistance: 1000000, // 1000 km in meters
+          $maxDistance: 5000, // ✅ 5km radius
         },
       },
-      status: "Available", // ✅ Fix: Capitalized "Available" to match schema
+      status: "Available",
     });
 
-    if (!nearestPartner) {
-      return res.status(404).json({ message: "No available partner within 5 km" });
+    if (nearestPartner) {
+      assignedPartner = nearestPartner;
+    } else {
+      console.log("No partner within 5 km, searching for any available partner...");
+
+      // ✅ Step 3: Koi bhi available partner dhoondo
+      let availablePartner = await Partner.findOne({ status: "Available" });
+
+      if (availablePartner) {
+        assignedPartner = availablePartner;
+      } else {
+        return res.status(404).json({ message: "No available partners found" });
+      }
     }
 
-    // ✅ Step 3: Booking create karo
+    // ✅ Step 4: Booking create karo
     const bookingData = {
       customerId,
       customer: {
         _id: customer._id,
         email: customer.email,
         phone: customer.phone,
-        location: customer.location, // ✅ Add customer location in booking
+        location: customer.location,
       },
       station: {
         name: ev_station_name,
@@ -57,31 +70,32 @@ exports.createBooking = async (req, res) => {
       amount,
       status: "Pending",
       partner: {
-        _id: nearestPartner._id,
-        name: nearestPartner.name,
-        mobile: nearestPartner.mobile, // ✅ Added mobile for reference
-        email: nearestPartner.email, // ✅ Added email for reference
-        location: nearestPartner.location,
+        _id: assignedPartner._id,
+        name: assignedPartner.name,
+        mobile: assignedPartner.mobile,
+        email: assignedPartner.email,
+        location: assignedPartner.location,
       },
     };
 
     const newBooking = new Booking(bookingData);
     await newBooking.save();
 
-    // ✅ Step 4: Partner ko "Busy" mark karo
-    await Partner.findByIdAndUpdate(nearestPartner._id, { status: "Busy" });
+    // ✅ Step 5: Partner ko "Busy" mark karo
+    await Partner.findByIdAndUpdate(assignedPartner._id, { status: "Busy" });
 
     res.status(201).json({
       message: "Booking created successfully",
       booking: newBooking,
-      assignedPartner: nearestPartner,
+      assignedPartner,
     });
 
   } catch (error) {
-    console.error("Error in createBooking:", error); // ✅ Debugging error
+    console.error("Error in createBooking:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.stopCharging = async (req, res) => {
   try {
