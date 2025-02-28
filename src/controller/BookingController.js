@@ -82,7 +82,7 @@ exports.createBooking = async (req, res) => {
     await newBooking.save();
 
     // ✅ Step 5: Partner ko "Busy" mark karo
-    await Partner.findByIdAndUpdate(assignedPartner._id, { status: "Busy" });
+    await Partner.findByIdAndUpdate(assignedPartner._id, { status: "Available" });
 
     res.status(201).json({
       message: "Booking created successfully",
